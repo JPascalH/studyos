@@ -10,7 +10,9 @@
     notes: '',
     activityDays: {},
     focusSessions: 0,
-    timer: { mode: 'focus', remaining: FOCUS_SECONDS, running: false, endsAt: null }
+    timer: { mode: 'focus', remaining: FOCUS_SECONDS, running: false, endsAt: null },
+    name: '',
+    language: 'de'
   };
 
   function loadState() {
@@ -21,7 +23,9 @@
         ...parsed,
         tasks: Array.isArray(parsed.tasks) ? parsed.tasks : [],
         activityDays: parsed.activityDays && typeof parsed.activityDays === 'object' ? parsed.activityDays : {},
-        timer: { ...defaults.timer, ...(parsed.timer || {}) }
+        timer: { ...defaults.timer, ...(parsed.timer || {}) },
+        name: typeof parsed.name === 'string' ? parsed.name.slice(0, 40) : defaults.name,
+        language: parsed.language === 'en' ? 'en' : 'de'
       };
     } catch (_) {
       return { ...defaults, timer: { ...defaults.timer } };
@@ -30,9 +34,10 @@
 
   const state = loadState();
   const $ = (selector) => document.querySelector(selector);
+  const { t, applyLanguage, subjects } = window.StudyOSI18n;
   const refs = {
     connection: $('#connection-status'), connectionLabel: $('#connection-label'), date: $('#today-label'),
-    welcomeKicker: $('#welcome-kicker'), nextTitle: $('#next-step-title'), nextCopy: $('#next-step-copy'),
+    welcomeKicker: $('#welcome-kicker'), welcomeHeading: $('#welcome-heading'), welcomeCopy: $('.welcome-copy'), nextTitle: $('#next-step-title'), nextCopy: $('#next-step-copy'),
     streak: $('#streak-value'), streakNote: $('#streak-note'), focusTotal: $('#focus-total'),
     tasksToday: $('#tasks-today-value'), tasksTodayNote: $('#tasks-today-note'), goalCount: $('#goal-count'),
     goalProgress: $('#goal-progress'), goalPercent: $('#goal-percent'), miniQuest: $('#mini-quest-copy'),
@@ -44,19 +49,37 @@
     notesStatus: $('#notes-save-status'), notesCount: $('#notes-count'), searchForm: $('#search-form'),
     searchQuery: $('#search-query'), searchButton: $('#search-button'), searchStatus: $('#search-status'),
     searchResults: $('#search-results'), toast: $('#toast'), backupExport: $('#backup-export'),
-    backupImport: $('#backup-import'), backupFile: $('#backup-file'), backupStatus: $('#backup-status')
+    backupImport: $('#backup-import'), backupFile: $('#backup-file'), backupStatus: $('#backup-status'),
+    profileName: $('#profile-name'), profileLanguage: $('#profile-language'), avatarInitial: $('#avatar-initial'),
+    installButton: $('#install-app'), updateButton: $('#update-pill')
   };
 
   let toastTimer = null;
   let notesTimer = null;
+  let deferredInstallPrompt = null;
+  let serviceWorkerRegistration = null;
+  let applyingUpdate = false;
+
+  function subjectLabel(subject) {
+    return state.language === 'en' ? (subjects[subject] || subject) : subject;
+  }
+
+  function renderGreeting() {
+    const hour = new Date().getHours();
+    const greeting = hour < 11 ? t('greeting.morning') : hour < 18 ? t('greeting.day') : t('greeting.evening');
+    refs.welcomeKicker.textContent = hour < 11 ? (state.language === 'en' ? 'GOOD MORNING · YOUR STUDY SPACE' : 'GUTEN MORGEN · DEIN LERN-SPACE') : hour < 18 ? t('greeting.kicker') : (state.language === 'en' ? 'GOOD EVENING · YOUR STUDY SPACE' : 'GUTEN ABEND · DEIN LERN-SPACE');
+    refs.welcomeHeading.textContent = state.name ? t('greeting.name', { greeting, name: state.name }) : t('greeting.noName', { greeting });
+    const firstLetter = [...(state.name || '')][0];
+    refs.avatarInitial.textContent = firstLetter ? firstLetter.toLocaleUpperCase(state.language === 'en' ? 'en-GB' : 'de-DE') : 'S';
+  }
 
   function saveState() {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-      refs.taskFooter.textContent = 'Deine Aufgaben werden nur in diesem Browser gespeichert.';
+      refs.taskFooter.textContent = t('tasks.savedBrowser');
       return true;
     } catch (_) {
-      refs.taskFooter.textContent = 'Speichern ist in diesem Browser gerade nicht verfügbar.';
+      refs.taskFooter.textContent = t('storage.unavailable');
       return false;
     }
   }
@@ -101,17 +124,17 @@
 
   function updateDate() {
     const now = new Date();
-    refs.date.textContent = new Intl.DateTimeFormat('de-DE', { weekday: 'short', day: 'numeric', month: 'short' }).format(now);
-    const hour = now.getHours();
-    refs.welcomeKicker.textContent = hour < 11 ? 'GUTEN MORGEN · DEIN LERN-SPACE' : hour < 18 ? 'DEIN LERN-CONTROL-CENTER' : 'GUTEN ABEND · DEIN LERN-SPACE';
-    refs.taskListDate.textContent = new Intl.DateTimeFormat('de-DE', { day: '2-digit', month: 'short' }).format(now).toUpperCase();
+    const locale = state.language === 'en' ? 'en-GB' : 'de-DE';
+    refs.date.textContent = new Intl.DateTimeFormat(locale, { weekday: 'short', day: 'numeric', month: 'short' }).format(now);
+    refs.taskListDate.textContent = new Intl.DateTimeFormat(locale, { day: '2-digit', month: 'short' }).format(now).toUpperCase();
+    renderGreeting();
   }
 
   function updateConnection() {
     const online = navigator.onLine;
     refs.connection.classList.toggle('online', online);
     refs.connection.classList.toggle('offline', !online);
-    refs.connectionLabel.textContent = online ? 'Internet bereit' : 'Offline-Modus';
+    refs.connectionLabel.textContent = online ? t('connection.online') : t('connection.offline');
   }
 
   function renderSummary() {
@@ -123,18 +146,18 @@
     const percent = Math.round((goal / 3) * 100);
 
     refs.streak.textContent = String(streak);
-    refs.streakNote.textContent = streak ? 'Stark — bleib im Flow.' : 'Heute kannst du deine Serie starten.';
+    refs.streakNote.textContent = streak ? t('summary.streak') : t('summary.streakStart');
     refs.focusTotal.textContent = String(Number(state.focusSessions) || 0);
     refs.tasksToday.textContent = String(todayCompleted);
-    refs.tasksTodayNote.textContent = todayCompleted ? 'Nice — das hast du heute geschafft.' : 'Ein Häkchen nach dem anderen.';
+    refs.tasksTodayNote.textContent = todayCompleted ? t('summary.tasksDone') : t('summary.tasksEmpty');
     refs.goalCount.textContent = String(goal);
     refs.goalProgress.style.width = `${percent}%`;
     refs.goalPercent.textContent = `${percent}%`;
-    refs.miniQuest.textContent = activity >= 3 ? 'Tagesziel geschafft — richtig stark!' : activity === 2 ? 'Noch eine kleine Aktion bis zum Tagesziel.' : activity === 1 ? 'Zwei kleine Aktionen bis zum Tagesziel.' : 'Starte deine erste Fokus-Session.';
+    refs.miniQuest.textContent = activity >= 3 ? t('quest.done') : activity === 2 ? t('quest.one') : activity === 1 ? t('quest.two') : t('quest.start');
 
     const incomplete = state.tasks.filter((task) => !task.completed).length;
-    refs.nextTitle.textContent = incomplete ? 'Dein nächster Schritt wartet.' : 'Dein Tag. Dein Tempo.';
-    refs.nextCopy.textContent = incomplete ? `Du hast ${incomplete} offene${incomplete === 1 ? ' Aufgabe' : ' Aufgaben'}. Such dir eine aus und leg los.` : 'Füge eine Aufgabe hinzu und starte mit einem 25-Minuten-Fokus.';
+    refs.nextTitle.textContent = incomplete ? t('next.waiting') : t('next.titleDefault');
+    refs.nextCopy.textContent = incomplete ? t(incomplete === 1 ? 'next.one' : 'next.many', { count: incomplete }) : t('next.default');
   }
 
   function remainingSeconds() {
@@ -158,11 +181,11 @@
     refs.timerProgress.style.strokeDasharray = String(CIRCUMFERENCE);
     refs.timerProgress.style.strokeDashoffset = String(CIRCUMFERENCE * (1 - progress));
     refs.timerProgress.style.stroke = state.timer.mode === 'focus' ? 'var(--cyan)' : 'var(--violet)';
-    refs.timerModeLabel.textContent = state.timer.mode === 'focus' ? 'ZEIT FÜR FOKUS' : 'ZEIT FÜR PAUSE';
-    refs.timerHint.textContent = state.timer.mode === 'focus' ? 'Ein Schritt nach dem anderen.' : 'Kurz durchatmen. Du hast es verdient.';
+    refs.timerModeLabel.textContent = t(state.timer.mode === 'focus' ? 'timer.focus' : 'timer.break');
+    refs.timerHint.textContent = t(state.timer.mode === 'focus' ? 'timer.hintFocus' : 'timer.hintBreak');
     refs.timerToggleIcon.textContent = state.timer.running ? 'Ⅱ' : '▶';
-    refs.timerToggleLabel.textContent = state.timer.running ? 'Pause' : 'Starten';
-    document.title = state.timer.running ? `${formatTime(remaining)} · StudyOS` : 'StudyOS — dein Lern-Cockpit';
+    refs.timerToggleLabel.textContent = t(state.timer.running ? 'timer.pause' : 'timer.start');
+    document.title = state.timer.running ? t('title.running', { time: formatTime(remaining) }) : t('timer.title');
     document.querySelectorAll('.mode-button').forEach((button) => {
       const selected = button.dataset.mode === state.timer.mode;
       button.classList.toggle('selected', selected);
@@ -176,10 +199,10 @@
     now.setHours(0, 0, 0, 0);
     const dueDate = parseDateKey(due);
     const diff = Math.round((dueDate.getTime() - now.getTime()) / 86400000);
-    if (diff === 0) return 'Heute fällig';
-    if (diff === 1) return 'Morgen fällig';
-    if (diff === -1) return 'Seit gestern fällig';
-    return new Intl.DateTimeFormat('de-DE', { day: 'numeric', month: 'short' }).format(dueDate);
+    if (diff === 0) return t('due.today');
+    if (diff === 1) return t('due.tomorrow');
+    if (diff === -1) return t('due.yesterday');
+    return new Intl.DateTimeFormat(state.language === 'en' ? 'en-GB' : 'de-DE', { day: 'numeric', month: 'short' }).format(dueDate);
   }
 
   function createTaskNode(task) {
@@ -189,7 +212,7 @@
     check.type = 'button';
     check.className = 'task-check';
     check.dataset.taskToggle = task.id;
-    check.setAttribute('aria-label', task.completed ? `Als offen markieren: ${task.title}` : `Als erledigt markieren: ${task.title}`);
+    check.setAttribute('aria-label', t(task.completed ? 'task.open' : 'task.done', { title: task.title }));
     check.textContent = '✓';
 
     const copy = document.createElement('div');
@@ -201,7 +224,7 @@
     meta.className = 'task-meta';
     const subject = document.createElement('span');
     subject.className = 'subject-tag';
-    subject.textContent = task.subject || 'Allgemein';
+    subject.textContent = subjectLabel(task.subject || 'Allgemein');
     meta.append(subject);
     if (task.due) {
       const due = document.createElement('span');
@@ -214,14 +237,14 @@
 
     const status = document.createElement('span');
     status.className = 'task-status';
-    status.textContent = task.completed ? 'FERTIG' : '';
+    status.textContent = task.completed ? t('task.statusDone') : '';
     status.style.cssText = 'color:#73dfb3;font-size:7px;font-weight:800;letter-spacing:.7px;';
 
     const remove = document.createElement('button');
     remove.type = 'button';
     remove.className = 'task-delete';
     remove.dataset.taskDelete = task.id;
-    remove.setAttribute('aria-label', `Aufgabe löschen: ${task.title}`);
+    remove.setAttribute('aria-label', t('task.delete', { title: task.title }));
     remove.textContent = '×';
     item.append(check, copy, status, remove);
     return item;
@@ -245,9 +268,9 @@
       icon.className = 'empty-icon';
       icon.textContent = '✦';
       const title = document.createElement('strong');
-      title.textContent = 'Dein Board ist noch leer.';
+      title.textContent = t('tasks.emptyTitle');
       const copy = document.createElement('span');
-      copy.textContent = 'Füge oben deine erste Aufgabe hinzu. Kleine Schritte zählen.';
+      copy.textContent = t('tasks.emptyCopy');
       empty.append(icon, title, copy);
       refs.taskList.append(empty);
       return;
@@ -300,11 +323,11 @@
       recordActivity({ focus: true });
       state.timer.mode = 'break';
       state.timer.remaining = BREAK_SECONDS;
-      showToast('Fokus-Session geschafft. Zeit für eine kurze Pause.');
+      showToast(t('toast.timerFocus'));
     } else {
       state.timer.mode = 'focus';
       state.timer.remaining = FOCUS_SECONDS;
-      showToast('Pause vorbei. Bereit für den nächsten Fokus?');
+      showToast(t('toast.timerBreak'));
     }
     saveState();
     renderTimer();
@@ -337,7 +360,7 @@
     renderSummary();
     refs.taskForm.reset();
     refs.taskTitle.focus();
-    showToast('Aufgabe hinzugefügt. Du schaffst das.');
+    showToast(t('toast.taskAdded'));
   }
 
   function handleTaskListClick(event) {
@@ -352,13 +375,13 @@
       saveState();
       renderTasks();
       renderSummary();
-      showToast(task.completed ? 'Aufgabe erledigt — nice!' : 'Aufgabe wieder geöffnet.');
+      showToast(t(task.completed ? 'toast.taskDone' : 'toast.taskReopened'));
     } else if (remove) {
       state.tasks = state.tasks.filter((item) => item.id !== remove.dataset.taskDelete);
       saveState();
       renderTasks();
       renderSummary();
-      showToast('Aufgabe gelöscht.');
+      showToast(t('toast.taskDeleted'));
     }
   }
 
@@ -369,19 +392,19 @@
       article.className = 'result-card';
       const heading = document.createElement('h3');
       const link = document.createElement('a');
-      link.href = page.fullurl || `https://de.wikipedia.org/wiki/${encodeURIComponent(page.title.replace(/ /g, '_'))}`;
+      link.href = page.fullurl || `https://${state.language === 'en' ? 'en' : 'de'}.wikipedia.org/wiki/${encodeURIComponent(page.title.replace(/ /g, '_'))}`;
       link.target = '_blank';
       link.rel = 'noopener noreferrer';
       link.textContent = page.title;
       heading.append(link);
       const summary = document.createElement('p');
-      summary.textContent = page.extract || 'Öffne den Artikel, um mehr über dieses Thema zu erfahren.';
+      summary.textContent = page.extract || t('search.summaryFallback');
       const source = document.createElement('a');
       source.className = 'result-link';
       source.href = link.href;
       source.target = '_blank';
       source.rel = 'noopener noreferrer';
-      source.textContent = 'Quelle auf Wikipedia öffnen ↗';
+      source.textContent = t('search.source');
       article.append(heading, summary, source);
       refs.searchResults.append(article);
     });
@@ -389,30 +412,31 @@
 
   async function searchWikipedia(query) {
     refs.searchStatus.className = 'search-status';
-    refs.searchStatus.textContent = 'Suche läuft …';
+    refs.searchStatus.textContent = t('search.loading');
     refs.searchResults.replaceChildren();
     refs.searchButton.disabled = true;
+    const language = state.language === 'en' ? 'en' : 'de';
     const params = new URLSearchParams({
       action: 'query', generator: 'search', gsrsearch: query, gsrnamespace: '0', gsrlimit: '4',
       prop: 'extracts|info', exintro: '1', explaintext: '1', inprop: 'url', format: 'json', origin: '*', formatversion: '2'
     });
     try {
-      const response = await fetch(`https://de.wikipedia.org/w/api.php?${params.toString()}`, { signal: AbortSignal.timeout(12000) });
-      if (!response.ok) throw new Error('Die Online-Suche ist gerade nicht erreichbar.');
+      const response = await fetch(`https://${language}.wikipedia.org/w/api.php?${params.toString()}`, { signal: AbortSignal.timeout(12000) });
+      if (!response.ok) throw new Error(t('search.unreachable'));
       const data = await response.json();
       const pages = Array.isArray(data?.query?.pages) ? data.query.pages : [];
       pages.sort((a, b) => (a.index || 0) - (b.index || 0));
       if (!pages.length) {
-        refs.searchStatus.textContent = `Keine Treffer für „${query}“ gefunden.`;
+        refs.searchStatus.textContent = t('search.none', { query });
         return;
       }
       renderSearchResults(pages);
-      refs.searchStatus.textContent = `${pages.length} kurze Zusammenfassungen gefunden.`;
+      refs.searchStatus.textContent = t('search.found', { count: pages.length });
     } catch (error) {
       refs.searchStatus.className = 'search-status error';
       refs.searchStatus.textContent = navigator.onLine
-        ? 'Die Suche konnte gerade nicht geladen werden. Prüfe deine Verbindung oder versuche es später noch einmal.'
-        : 'Du bist offline. Aufgaben und Notizen funktionieren weiter; für die Lernsuche brauchst du Internet.';
+        ? t('search.failedOnline')
+        : t('search.failedOffline');
     } finally {
       refs.searchButton.disabled = false;
     }
@@ -420,8 +444,28 @@
 
   function registerServiceWorker() {
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js').catch(() => {
+      navigator.serviceWorker.register('/sw.js').then((registration) => {
+        serviceWorkerRegistration = registration;
+        const showUpdate = () => { refs.updateButton.hidden = false; };
+        if (registration.waiting && navigator.serviceWorker.controller) showUpdate();
+        registration.addEventListener('updatefound', () => {
+          const worker = registration.installing;
+          if (!worker) return;
+          worker.addEventListener('statechange', () => {
+            if (worker.state !== 'installed') return;
+            if (navigator.serviceWorker.controller) showUpdate();
+            else worker.postMessage({ type: 'SKIP_WAITING' });
+          });
+        });
+        const checkForUpdates = () => { if (navigator.onLine) registration.update().catch(() => {}); };
+        window.setInterval(checkForUpdates, 30 * 60 * 1000);
+        document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') checkForUpdates(); });
+        window.addEventListener('online', checkForUpdates);
+      }).catch(() => {
         // Preview environments may restrict worker installation; local data still remains available.
+      });
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (applyingUpdate) window.location.reload();
       });
     }
   }
@@ -441,18 +485,18 @@
 
   function normalizeBackupState(source) {
     if (!isPlainObject(source) || !Array.isArray(source.tasks) || source.tasks.length > 1000 || typeof source.notes !== 'string' || source.notes.length > 1200) {
-      throw new Error('Die Sicherung ist unvollständig oder enthält ungültige Daten.');
+      throw new Error(t('backup.invalidData'));
     }
 
     const usedIds = new Set();
     const tasks = source.tasks.map((task, index) => {
       if (!isPlainObject(task) || typeof task.title !== 'string' || !task.title.trim() || task.title.length > 90 || typeof task.completed !== 'boolean') {
-        throw new Error('Eine Aufgabe in der Sicherung ist ungültig.');
+        throw new Error(t('backup.invalidTask'));
       }
       const due = typeof task.due === 'string' ? task.due : '';
-      if (due && !isValidDateKey(due)) throw new Error('Ein Aufgabendatum in der Sicherung ist ungültig.');
+      if (due && !isValidDateKey(due)) throw new Error(t('backup.invalidDue'));
       const completedAt = task.completedAt == null ? null : task.completedAt;
-      if (completedAt !== null && !isValidDateKey(completedAt)) throw new Error('Ein Abschlussdatum in der Sicherung ist ungültig.');
+      if (completedAt !== null && !isValidDateKey(completedAt)) throw new Error(t('backup.invalidCompleted'));
       let id = typeof task.id === 'string' && task.id.length > 0 && task.id.length <= 100 ? task.id : '';
       if (!id || usedIds.has(id)) id = `import-${Date.now()}-${index}`;
       usedIds.add(id);
@@ -461,13 +505,13 @@
       return { id, title: task.title.trim(), subject, due, completed: task.completed, completedAt, createdAt };
     });
 
-    if (source.activityDays !== undefined && !isPlainObject(source.activityDays)) throw new Error('Der Lernfortschritt in der Sicherung ist ungültig.');
+    if (source.activityDays !== undefined && !isPlainObject(source.activityDays)) throw new Error(t('backup.invalidProgress'));
     const activityEntries = Object.entries(source.activityDays || {});
-    if (activityEntries.length > 3650) throw new Error('Die Sicherung enthält zu viele Fortschrittseinträge.');
+    if (activityEntries.length > 3650) throw new Error(t('backup.tooManyEntries'));
     const activityDays = {};
     activityEntries.forEach(([date, count]) => {
       if (!isValidDateKey(date) || !Number.isFinite(count) || count < 0 || count > 1000000) {
-        throw new Error('Ein Fortschrittseintrag in der Sicherung ist ungültig.');
+        throw new Error(t('backup.invalidEntry'));
       }
       if (count > 0) activityDays[date] = count;
     });
@@ -486,6 +530,8 @@
       notes: source.notes,
       activityDays,
       focusSessions,
+      name: typeof source.name === 'string' ? source.name.slice(0, 40) : '',
+      language: source.language === 'en' ? 'en' : 'de',
       timer: { mode, remaining, running: false, endsAt: null }
     };
   }
@@ -510,36 +556,36 @@
       link.click();
       link.remove();
       window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-      refs.backupStatus.textContent = 'Sicherung heruntergeladen. Übertrage die Datei auf deinen anderen Laptop.';
+      refs.backupStatus.textContent = t('backup.done');
     } catch (_) {
-      refs.backupStatus.textContent = 'Die Sicherung konnte nicht erstellt werden. Prüfe den verfügbaren Speicherplatz.';
+      refs.backupStatus.textContent = t('backup.createFail');
     }
   }
 
   async function importBackup(file) {
     if (!file) return;
     if (file.size > 2 * 1024 * 1024) {
-      refs.backupStatus.textContent = 'Die Sicherungsdatei ist zu groß. Erlaubt sind höchstens 2 MB.';
+      refs.backupStatus.textContent = t('backup.tooLarge');
       return;
     }
     try {
       const payload = JSON.parse(await file.text());
       if (!isPlainObject(payload) || payload.app !== 'StudyOS' || payload.format !== 'studyos-backup' || payload.version !== 1) {
-        throw new Error('Diese Datei ist keine unterstützte StudyOS-Sicherung.');
+        throw new Error(t('backup.invalid'));
       }
       const restored = normalizeBackupState(payload.state);
-      const confirmed = window.confirm('Die Sicherung ersetzt Aufgaben, Notizen und Fortschritt, die derzeit in diesem Browser gespeichert sind. Möchtest du fortfahren?');
+      const confirmed = window.confirm(t('backup.confirm'));
       if (!confirmed) {
-        refs.backupStatus.textContent = 'Import abgebrochen. Deine bisherigen Daten sind unverändert.';
+        refs.backupStatus.textContent = t('backup.cancel');
         return;
       }
       localStorage.setItem(STORAGE_KEY, JSON.stringify(restored));
-      refs.backupStatus.textContent = 'Import erfolgreich. StudyOS wird mit deinem übertragenen Lernstand neu geladen …';
+      refs.backupStatus.textContent = t('backup.importing');
       window.setTimeout(() => window.location.reload(), 500);
     } catch (error) {
       refs.backupStatus.textContent = error instanceof SyntaxError
-        ? 'Die Datei ist beschädigt oder kein gültiges StudyOS-Backup.'
-        : error.message || 'Die Sicherung konnte nicht importiert werden.';
+        ? t('backup.corrupt')
+        : error.message || t('backup.importFail');
     }
   }
 
@@ -560,11 +606,11 @@
   refs.notes.addEventListener('input', () => {
     state.notes = refs.notes.value;
     refs.notesCount.textContent = `${state.notes.length} / 1200`;
-    refs.notesStatus.textContent = 'Speichert …';
+      refs.notesStatus.textContent = t('notes.saving');
     window.clearTimeout(notesTimer);
     notesTimer = window.setTimeout(() => {
       saveState();
-      refs.notesStatus.textContent = 'Auf diesem Gerät gespeichert';
+      refs.notesStatus.textContent = t('notes.saved');
     }, 250);
   });
   refs.searchForm.addEventListener('submit', (event) => {
@@ -581,6 +627,55 @@
   });
   window.addEventListener('online', updateConnection);
   window.addEventListener('offline', updateConnection);
+  refs.profileName.value = state.name;
+  refs.profileLanguage.value = state.language;
+  applyLanguage(state.language);
+  refs.installButton.hidden = Boolean(window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+  refs.profileName.addEventListener('input', () => {
+    state.name = refs.profileName.value.trim().slice(0, 40);
+    saveState();
+    renderGreeting();
+  });
+  refs.profileLanguage.addEventListener('change', () => {
+    state.language = refs.profileLanguage.value === 'en' ? 'en' : 'de';
+    saveState();
+    applyLanguage(state.language);
+    updateDate();
+    updateConnection();
+    renderSummary();
+    renderTimer();
+    renderTasks();
+    refs.notesStatus.textContent = t('notes.saved');
+    if (!refs.updateButton.hidden) refs.updateButton.lastElementChild.textContent = t('update.available');
+  });
+  window.addEventListener('beforeinstallprompt', (event) => {
+    event.preventDefault();
+    deferredInstallPrompt = event;
+    refs.installButton.hidden = false;
+  });
+  refs.installButton.addEventListener('click', async () => {
+    if (!deferredInstallPrompt) {
+      showToast(t('install.help'));
+      return;
+    }
+    const prompt = deferredInstallPrompt;
+    deferredInstallPrompt = null;
+    await prompt.prompt();
+    const choice = await prompt.userChoice;
+    if (choice && choice.outcome === 'accepted') refs.installButton.hidden = true;
+  });
+  window.addEventListener('appinstalled', () => {
+    refs.installButton.hidden = true;
+    showToast(t('install.done'));
+  });
+  refs.updateButton.addEventListener('click', () => {
+    const waitingWorker = serviceWorkerRegistration && serviceWorkerRegistration.waiting;
+    if (!waitingWorker) return;
+    applyingUpdate = true;
+    refs.updateButton.disabled = true;
+    refs.updateButton.lastElementChild.textContent = t('update.installing');
+    waitingWorker.postMessage({ type: 'SKIP_WAITING' });
+  });
   window.addEventListener('beforeunload', () => {
     if (state.timer.running) state.timer.remaining = remainingSeconds();
     saveState();

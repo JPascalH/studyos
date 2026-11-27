@@ -1,26 +1,28 @@
 # StudyOS
 
-StudyOS ist ein leichtes, deutschsprachiges Lern-Cockpit für Laptop und Browser. Es enthält einen Fokus-/Pausentimer, eine nach Fach und Datum organisierte Aufgabenliste, Schnellnotizen sowie einen kleinen Lernfortschritt.
+StudyOS ist ein leichtes, zweisprachiges Lern-Cockpit für Laptop und Browser. Deutsch und English lassen sich im Profilmenü auswählen. Der Fokus-/Pausentimer, eine nach Fach und Datum organisierte Aufgabenliste, Schnellnotizen und Lernfortschritt funktionieren lokal; eine Begrüßung verwendet den eingetragenen Namen und passt sich der Tageszeit an.
 
-## Daten und Internet
+## Daten, Profil und Internet
 
-Aufgaben, Notizen, Timerzustand und Lernserie werden mit `localStorage` in diesem Browser gespeichert. Der App-Shell wird nach dem ersten erfolgreichen Laden zusätzlich per Service Worker gecacht. Die Online-Lernsuche fragt die deutschsprachige Wikipedia-API ab und zeigt kurze Zusammenfassungen mit direkten Quellenlinks. Die Suche benötigt eine Internetverbindung; die lokalen Bereiche sollen auch offline nutzbar bleiben.
+Aufgaben, Notizen, Timerzustand, Lernserie, Name und Sprache werden lokal im Browser gespeichert. StudyOS benötigt kein E-Mail-/Passwortkonto und synchronisiert keine Daten automatisch in eine Cloud. Die Online-Lernsuche nutzt je nach gewählter Sprache die deutsche oder englische Wikipedia. Der Verbindungsstatus zeigt an, ob der Browser online ist; Aufgaben und Notizen bleiben offline verfügbar.
 
-## Konto ohne E-Mail oder Passwort
+## Daten auf einen anderen Laptop übertragen
 
-StudyOS benötigt kein Online-Konto und sammelt keine Login-Daten. Öffne in der App den Bereich **Daten**, wähle **Sicherung herunterladen** und übertrage die erzeugte JSON-Datei auf den anderen Laptop. Dort wählst du **Sicherung importieren** und öffnest die Datei. Aufgaben, Notizen, Lernserie, Fokus-Sessions und Timerstand werden auf dem neuen Gerät wiederhergestellt.
+Öffne in der App den Bereich **Daten**, wähle **Sicherung herunterladen** und übertrage die erzeugte JSON-Datei auf den anderen Laptop. Dort wählst du **Sicherung importieren** und öffnest die Datei. Aufgaben, Notizen, Lernserie, Fokus-Sessions, Timerstand, Name und Sprache werden auf dem neuen Gerät wiederhergestellt.
 
-Der Import ersetzt die auf dem Zielgerät gespeicherten StudyOS-Daten und fragt vorher nach einer Bestätigung. Die Sicherungsdatei ist nicht verschlüsselt; bewahre sie sicher auf und teile sie nur mit Personen, denen du vertraust. Es gibt keine automatische Cloud-Synchronisierung: Du entscheidest selbst, wann und wohin du die Datei kopierst.
+Der Import ersetzt die StudyOS-Daten auf dem Zielgerät und fragt vorher nach einer Bestätigung. Die Sicherungsdatei ist nicht verschlüsselt; bewahre sie sicher auf und teile sie nur mit Personen, denen du vertraust. Es gibt keine automatische Cloud-Synchronisierung: Du entscheidest selbst, wann und wohin du die Datei kopierst.
 
-## Als App installieren
+## Als Desktop-App installieren
 
-StudyOS lässt sich nach der öffentlichen Veröffentlichung in Microsoft Edge oder Google Chrome als App installieren. Öffne die StudyOS-Webseite und wähle im Browsermenü **Apps → StudyOS installieren** beziehungsweise **Installieren** (die Bezeichnung kann je nach Browserversion leicht abweichen). In Edge findest du den Befehl meist im Menü **Apps**; in Chrome erscheint er im Menü oder als Installationssymbol in der Adressleiste.
+StudyOS ist eine installierbare PWA. Öffne die veröffentlichte StudyOS-Webseite in Microsoft Edge oder Google Chrome und wähle **App installieren**. Wenn der Browser keinen direkten Installationsdialog anbietet, öffne sein Menü und wähle **StudyOS installieren** beziehungsweise **Installieren**. Danach kannst du StudyOS im Windows-Startmenü suchen und an die Taskleiste anheften.
 
-Nach der Installation kannst du StudyOS im Windows-Startmenü suchen, rechtsklicken und **An Taskleiste anheften** wählen. Für den Desktop kannst du im selben Menü **Dateispeicherort öffnen** und die App-Verknüpfung auf den Desktop kopieren, oder im Installationsdialog **Verknüpfung erstellen** auswählen, falls angeboten.
+Ein separater Windows-`.exe`-Installer wird derzeit **nicht** bereitgestellt. Die PWA-Installation fügt StudyOS als Desktop-App hinzu, ohne eine eigenständige EXE-Datei herunterzuladen.
 
-## Aktualisierungen
+## Updates
 
-Neue Änderungen werden erst für andere Besucher sichtbar, wenn eine neue Version veröffentlicht wird. Die automatische Veröffentlichung ist derzeit ausgeschaltet; veröffentliche einen gespeicherten Stand über **Publish**. Bereits installierte StudyOS-Apps laden die neue App-Shell spätestens nach einem Neuladen der Seite. Aufgaben und Notizen bleiben jeweils lokal auf dem eigenen Gerät gespeichert und werden nicht zwischen verschiedenen Besuchern synchronisiert.
+StudyOS prüft im Hintergrund auf eine neu bereitgestellte App-Version. Wenn ein Service-Worker-Update bereitsteht, erscheint **Update verfügbar**; anklicken installiert die neue App-Version und lädt sie neu. Offline werden die App-Shell und Symbole weiterverwendet.
+
+Änderungen am GitHub-Quellcode werden erst für Besucher der Website sichtbar, wenn die Version auch veröffentlicht wird. Automatische Veröffentlichung ist ausgeschaltet; ein GitHub-Push veröffentlicht die Website nicht automatisch. Aufgaben und Notizen bleiben auf jedem Gerät lokal und werden nicht zwischen Besuchern synchronisiert.
 
 ## Lokal ausprobieren
 

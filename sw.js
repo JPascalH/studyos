@@ -1,8 +1,9 @@
-const CACHE_NAME = 'studyos-shell-v3';
+const CACHE_NAME = 'studyos-shell-v4';
 const APP_SHELL = [
   '/',
   '/index.html',
   '/styles.css',
+  '/i18n.js',
   '/app.js',
   '/studyos-mark.svg',
   '/studyos-icon-192.png',
@@ -11,11 +12,11 @@ const APP_SHELL = [
 ];
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then((cache) => cache.addAll(APP_SHELL))
-      .then(() => self.skipWaiting())
-  );
+  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL)));
+});
+
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
