@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#080b10">
+  <meta name="description" content="StudyOS — dein leichtes Lern-Cockpit. Offline für Aufgaben und Notizen, online für deine Lernrecherche.">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" href="/studyos-mark.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles.css">
+  <title>StudyOS — dein Lern-Cockpit</title>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Hauptnavigation">
+      <a class="brand" href="#overview" aria-label="StudyOS Startseite">
+        <img src="/studyos-mark.svg" alt="" class="brand-mark">
+        <span class="brand-copy"><strong>StudyOS</strong><small>LEVEL UP YOUR DAY</small></span>
+      </a>
+
+      <div class="nav-caption">WORKSPACE</div>
+      <nav class="nav-links">
+        <a class="nav-link active" href="#overview"><span class="nav-icon" aria-hidden="true">⌂</span><span>Übersicht</span></a>
+        <a class="nav-link" href="#focus"><span class="nav-icon" aria-hidden="true">◷</span><span>Fokus</span><span class="nav-ping"></span></a>
+        <a class="nav-link" href="#tasks"><span class="nav-icon" aria-hidden="true">☷</span><span>Aufgaben</span></a>
+        <a class="nav-link" href="#notes"><span class="nav-icon" aria-hidden="true">✎</span><span>Notizen</span></a>
+        <a class="nav-link" href="#learn"><span class="nav-icon" aria-hidden="true">⌕</span><span>Lernsuche</span></a>
+      </nav>
+
+      <div class="sidebar-spacer"></div>
+      <div class="sidebar-status">
+        <div class="status-orbit"><span></span></div>
+        <div><strong>Offline zuerst</strong><small>Deine Daten bleiben bei dir.</small></div>
+      </div>
+      <div class="sidebar-foot"><span class="tiny-dot"></span> DEIN PERSÖNLICHER STUDY SPACE</div>
+    </aside>
+
+    <main class="main-content" id="overview">
+      <header class="topbar">
+        <div class="breadcrumb"><span>WORKSPACE</span><b>/</b><strong>Übersicht</strong></div>
+        <div class="topbar-right">
+          <span id="connection-status" class="connection-pill" aria-live="polite"><span class="connection-dot"></span><span id="connection-label">Verbindung prüfen …</span></span>
+          <span class="date-pill" id="today-label">Heute</span>
+          <div class="avatar" aria-label="Dein Profil">S</div>
+        </div>
+      </header>
+
+      <section class="welcome-row" aria-labelledby="welcome-heading">
+        <div>
+          <div class="eyebrow"><span class="eyebrow-line"></span><span id="welcome-kicker">DEIN LERN-CONTROL-CENTER</span></div>
+          <h1 id="welcome-heading">Mach heute zu deinem <span>Level-up.</span></h1>
+          <p class="welcome-copy">Ein klarer Kopf. Ein kleiner Schritt. Dann der nächste.</p>
+        </div>
+        <a class="quick-start" href="#focus"><span class="quick-start-icon">▶</span><span><strong>Fokus starten</strong><small>Bring dich in den Flow</small></span><span class="quick-arrow">↗</span></a>
+      </section>
+
+      <section class="hero-panel" aria-label="Tagesübersicht">
+        <div class="hero-grid" aria-hidden="true"></div>
+        <div class="hero-copy">
+          <div class="hero-chip"><span class="chip-spark">✦</span> DEIN NÄCHSTER SCHRITT</div>
+          <h2 id="next-step-title">Dein Tag. Dein Tempo.</h2>
+          <p id="next-step-copy">Füge eine Aufgabe hinzu und starte mit einem 25-Minuten-Fokus.</p>
+          <a class="hero-button" href="#tasks">Plan für heute <span>→</span></a>
+        </div>
+        <div class="hero-art" aria-hidden="true">
+          <div class="art-ring ring-one"></div><div class="art-ring ring-two"></div>
+          <div class="art-core"><span>STUDY</span><strong>OS</strong><i>✦</i></div>
+          <div class="art-tag tag-top">FOCUS MODE <b>ON</b></div>
+          <div class="art-tag tag-bottom"><span class="tiny-dot"></span> READY WHEN YOU ARE</div>
+        </div>
+        <div class="hero-index">01 <span>/ 04</span></div>
+      </section>
+
+      <section class="stats-grid" aria-label="Dein Lernfortschritt">
+        <article class="stat-card">
+          <div class="stat-top"><span class="stat-label">DEINE SERIE</span><span class="stat-icon violet-icon">✦</span></div>
+          <div class="stat-value"><strong id="streak-value">0</strong><span>Tage</span></div>
+          <p class="stat-note" id="streak-note">Heute kannst du deine Serie starten.</p>
+          <div class="stat-sparkline spark-violet" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        </article>
+        <article class="stat-card">
+          <div class="stat-top"><span class="stat-label">FOKUS-SESSIONS</span><span class="stat-icon cyan-icon">◷</span></div>
+          <div class="stat-value"><strong id="focus-total">0</strong><span>abgeschlossen</span></div>
+          <p class="stat-note">Jede Session bringt dich weiter.</p>
+          <div class="stat-sparkline spark-cyan" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        </article>
+        <article class="stat-card">
+          <div class="stat-top"><span class="stat-label">AUFGABEN HEUTE</span><span class="stat-icon green-icon">✓</span></div>
+          <div class="stat-value"><strong id="tasks-today-value">0</strong><span>erledigt</span></div>
+          <p class="stat-note" id="tasks-today-note">Ein Häkchen nach dem anderen.</p>
+          <div class="stat-sparkline spark-green" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        </article>
+      </section>
+
+      <section class="main-grid">
+        <article class="panel focus-panel" id="focus">
+          <div class="panel-heading">
+            <div><div class="panel-kicker">DEIN FLOW</div><h2>Fokus-Timer</h2></div>
+            <span class="panel-badge"><span class="tiny-dot"></span> POMODORO</span>
+          </div>
+          <div class="mode-switch" role="group" aria-label="Timer-Modus">
+            <button class="mode-button selected" type="button" data-mode="focus" aria-pressed="true">Fokus <span>25 MIN</span></button>
+            <button class="mode-button" type="button" data-mode="break" aria-pressed="false">Pause <span>05 MIN</span></button>
+          </div>
+          <div class="timer-wrap">
+            <svg class="timer-ring" viewBox="0 0 240 240" role="img" aria-label="Timer-Fortschritt">
+              <circle class="timer-track" cx="120" cy="120" r="106"></circle>
+              <circle class="timer-progress" id="timer-progress" cx="120" cy="120" r="106"></circle>
+            </svg>
+            <div class="timer-readout"><span id="timer-mode-label">ZEIT FÜR FOKUS</span><strong id="timer-display">25:00</strong><small id="timer-hint">Ein Schritt nach dem anderen.</small></div>
+          </div>
+          <div class="timer-controls">
+            <button class="timer-reset" id="timer-reset" type="button" aria-label="Timer zurücksetzen">↺</button>
+            <button class="timer-toggle" id="timer-toggle" type="button"><span id="timer-toggle-icon">▶</span><span id="timer-toggle-label">Starten</span></button>
+            <span class="timer-spacer" aria-hidden="true"></span>
+          </div>
+          <p class="timer-caption">Dein Fokus-Timer läuft direkt hier im Browser.</p>
+        </article>
+
+        <article class="panel progress-panel">
+          <div class="panel-heading">
+            <div><div class="panel-kicker">KLEINE SCHRITTE, GROẞE WIRKUNG</div><h2>Dein Tagesziel</h2></div>
+            <span class="target-icon" aria-hidden="true">↗</span>
+          </div>
+          <div class="goal-number"><strong id="goal-count">0</strong><span>/ 3</span><small>Aktionen heute</small></div>
+          <div class="goal-track"><span id="goal-progress"></span></div>
+          <div class="goal-labels"><span>WEITER SO</span><span id="goal-percent">0%</span></div>
+          <div class="progress-divider"></div>
+          <div class="mini-quest">
+            <div class="quest-icon">✦</div>
+            <div><strong>Deine Mini-Quest</strong><p id="mini-quest-copy">Starte deine erste Fokus-Session.</p></div>
+          </div>
+          <div class="quest-footer"><span class="quest-streak">✧</span><span>Dein Fortschritt bleibt auf diesem Gerät gespeichert.</span></div>
+        </article>
+      </section>
+
+      <section class="content-grid">
+        <article class="panel tasks-panel" id="tasks">
+          <div class="panel-heading tasks-heading">
+            <div><div class="panel-kicker">ALLES IM BLICK</div><h2>Deine Aufgaben <span class="count-bubble" id="task-count">0</span></h2></div>
+            <span class="list-date" id="task-list-date">HEUTE</span>
+          </div>
+          <form class="task-form" id="task-form">
+            <label class="sr-only" for="task-title">Neue Aufgabe</label>
+            <input id="task-title" name="title" type="text" maxlength="90" placeholder="Was möchtest du erledigen?" required autocomplete="off">
+            <div class="form-row">
+              <label class="select-wrap"><span class="sr-only">Fach auswählen</span>
+                <select id="task-subject" name="subject" aria-label="Fach auswählen">
+                  <option value="Allgemein">Allgemein</option><option>Mathe</option><option>Deutsch</option><option>Englisch</option><option>Biologie</option><option>Geschichte</option><option>Physik</option><option>Chemie</option><option>Informatik</option><option>Sonstiges</option>
+                </select>
+              </label>
+              <label class="date-wrap"><span class="sr-only">Abgabedatum</span><input id="task-due" name="due" type="date" aria-label="Abgabedatum (optional)"></label>
+              <button class="add-task-button" type="submit"><span>＋</span> Hinzufügen</button>
+            </div>
+          </form>
+          <div class="task-list" id="task-list" aria-live="polite"></div>
+          <div class="tasks-footer"><span class="tiny-dot"></span><span id="task-footer-copy">Deine Aufgaben werden nur in diesem Browser gespeichert.</span></div>
+        </article>
+
+        <article class="panel notes-panel" id="notes">
+          <div class="panel-heading">
+            <div><div class="panel-kicker">GEDANKENABLAGE</div><h2>Schnellnotiz</h2></div>
+            <span class="notes-icon" aria-hidden="true">✎</span>
+          </div>
+          <label class="sr-only" for="notes-input">Deine Notizen</label>
+          <textarea id="notes-input" maxlength="1200" placeholder="Idee, Merksatz oder To-do — schreib’s dir auf …"></textarea>
+          <div class="notes-footer"><span id="notes-save-status">Wird auf diesem Gerät gespeichert</span><span id="notes-count">0 / 1200</span></div>
+          <div class="note-prompt"><span>✦</span><span>Notizen bleiben auch ohne Internet auf deinem Gerät.</span></div>
+        </article>
+      </section>
+
+      <section class="panel learn-panel" id="learn">
+        <div class="learn-intro">
+          <div class="learn-orb" aria-hidden="true"><span>⌕</span><i>✦</i></div>
+          <div><div class="panel-kicker">WISSEN AUF ABRUF</div><h2>Lernsuche <span>online</span></h2><p>Such einen Begriff und entdecke kurze Zusammenfassungen aus der deutschsprachigen Wikipedia.</p></div>
+        </div>
+        <form class="search-form" id="search-form">
+          <label class="sr-only" for="search-query">Suchbegriff</label>
+          <span class="search-icon" aria-hidden="true">⌕</span>
+          <input id="search-query" type="search" maxlength="120" placeholder="Zum Beispiel: Photosynthese, Bruchrechnung …" autocomplete="off" required>
+          <button type="submit" id="search-button"><span>Im Web suchen</span><b>↗</b></button>
+        </form>
+        <div class="search-hint"><span class="tiny-dot"></span> Benötigt Internet. Deine Aufgaben und Notizen funktionieren auch offline.</div>
+        <div id="search-status" class="search-status" aria-live="polite"></div>
+        <div id="search-results" class="search-results"></div>
+        <div class="learn-credit">QUELLEN: WIKIPEDIA · DIE TREFFER ÖFFNEN SICH AUF DER ORIGINALSEITE</div>
+      </section>
+
+      <footer class="app-footer"><span>StudyOS <span class="footer-dot">•</span> dein Lern-Cockpit</span><span>OFFLINE READY <span class="tiny-dot"></span></span></footer>
+    </main>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="/app.js" defer></script>
+</body>
+</html>
