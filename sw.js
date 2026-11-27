@@ -1,10 +1,12 @@
-const CACHE_NAME = 'studyos-shell-v1';
+const CACHE_NAME = 'studyos-shell-v2';
 const APP_SHELL = [
   '/',
   '/index.html',
   '/styles.css',
   '/app.js',
   '/studyos-mark.svg',
+  '/studyos-icon-192.png',
+  '/studyos-icon-512.png',
   '/manifest.webmanifest'
 ];
 
