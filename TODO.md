@@ -12,5 +12,5 @@
 - [x] **Deutsch/Englisch:** Die Oberfläche kann auf Deutsch oder Englisch umgeschaltet werden; die Lernsuche verwendet die jeweils passende Wikipedia-Sprache.
 - [x] **Verbindung und Updates:** StudyOS zeigt den Online-/Offline-Status. Wenn eine neue Service-Worker-Version bereitsteht, erscheint ein Update-Hinweis mit Möglichkeit zur sofortigen Aktualisierung.
 - [x] **Desktop-Installation:** Ein Installieren-Knopf startet, sofern der Browser es anbietet, die PWA-Installation; andernfalls erklärt er, wie die App über Edge oder Chrome installiert werden kann.
-- [ ] **Portable Windows-EXE:** Eine einzelne Windows-x64-EXE startet ohne Installationsprogramm. Aufgaben, Notizen und Profil bleiben lokal erhalten; die Desktop-App erkennt neue GitHub-Releases und verlinkt den manuellen Download.
-- [ ] **Öffentliche GitHub-Veröffentlichung:** Das Repository `JPascalH/studyos` wird nach Prüfung des Builds öffentlich. Ein GitHub-Release stellt die portable EXE und eine SHA-256-Prüfsumme zum Download bereit. Die Website wird dadurch nicht automatisch veröffentlicht.
+- [x] **Portable Windows-EXE:** Eine einzelne Windows-x64-EXE startet ohne Installationsprogramm. Aufgaben, Notizen und Profil bleiben lokal erhalten; die Desktop-App erkennt neue GitHub-Releases und verlinkt den manuellen Download.
+- [x] **Öffentliche GitHub-Veröffentlichung:** Das Repository `JPascalH/studyos` ist öffentlich. GitHub Release `v1.0.0` stellt die portable EXE und eine SHA-256-Prüfsumme zum Download bereit. Die Website wird dadurch nicht automatisch veröffentlicht.

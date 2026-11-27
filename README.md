@@ -4,7 +4,7 @@ StudyOS ist ein leichtes, zweisprachiges Lern-Cockpit für Laptop und Browser. D
 
 ## Portable Windows-App herunterladen
 
-Die aktuelle Windows-x64-Version gibt es auf der [GitHub-Release-Seite](https://github.com/JPascalH/studyos/releases/latest). Lade **StudyOS-Portable.exe** herunter und starte die Datei. Ein Installationsprogramm ist nicht nötig. StudyOS funktioniert offline; die Lernsuche und die Prüfung auf neue Versionen brauchen Internet.
+Die aktuelle Windows-x64-Version gibt es auf der [GitHub-Release-Seite](https://github.com/JPascalH/studyos/releases/latest). Lade **StudyOS-Portable-1.0.0.exe** herunter und starte die Datei. Ein Installationsprogramm ist nicht nötig. StudyOS funktioniert offline; die Lernsuche und die Prüfung auf neue Versionen brauchen Internet.
 
 Die EXE ist derzeit nicht mit einem kostenpflichtigen Windows-Code-Signaturzertifikat signiert. Windows kann deshalb eine Sicherheitswarnung anzeigen. Lade die Datei nur von der verlinkten offiziellen Release-Seite herunter. Eine SHA-256-Prüfsumme wird beim Release mitveröffentlicht.
 
