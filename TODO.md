@@ -7,3 +7,4 @@
 - [x] **Online-Lernsuche:** Mit Internetverbindung kann man Lernbegriffe suchen und kurze Wikipedia-Zusammenfassungen mit Quellenlinks ansehen.
 - [x] **Visuelles Konzept und Gerätekomfort:** StudyOS ist ein leichtes, responsives Lern-Cockpit für den Laptop mit dunkler, cooler Gaming-/Cyberpunk-inspirierter Gestaltung.
 - [x] **Installierbare PWA:** StudyOS besitzt ein eigenes Manifest, passende 192×192- und 512×512-PNG-App-Symbole sowie einen Service Worker, der die App-Shell und Symbole nach dem ersten erfolgreichen Laden für Offline-Zugriff zwischenspeichert.
+- [x] **Passwortloser Daten-Transfer:** Im Bereich „Daten“ kann man Aufgaben, Notizen, Lernserie, Fokus-Sessions und Timerstand als JSON-Datei herunterladen und auf einem anderen Laptop importieren. Es wird kein E-Mail-/Passwortkonto und keine Cloud-Synchronisierung benötigt; ein Import überschreibt nach Bestätigung die lokalen App-Daten.

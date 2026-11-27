@@ -26,6 +26,7 @@
         <a class="nav-link" href="#tasks"><span class="nav-icon" aria-hidden="true">☷</span><span>Aufgaben</span></a>
         <a class="nav-link" href="#notes"><span class="nav-icon" aria-hidden="true">✎</span><span>Notizen</span></a>
         <a class="nav-link" href="#learn"><span class="nav-icon" aria-hidden="true">⌕</span><span>Lernsuche</span></a>
+        <a class="nav-link" href="#backup"><span class="nav-icon" aria-hidden="true">⇄</span><span>Daten</span></a>
       </nav>
 
       <div class="sidebar-spacer"></div>
@@ -185,6 +186,24 @@
         <div id="search-status" class="search-status" aria-live="polite"></div>
         <div id="search-results" class="search-results"></div>
         <div class="learn-credit">QUELLEN: WIKIPEDIA · DIE TREFFER ÖFFNEN SICH AUF DER ORIGINALSEITE</div>
+      </section>
+
+      <section class="panel backup-panel" id="backup" aria-labelledby="backup-heading">
+        <div class="backup-intro">
+          <div class="backup-orb" aria-hidden="true">⇄</div>
+          <div>
+            <div class="panel-kicker">DEIN KONTO · OHNE E-MAIL ODER PASSWORT</div>
+            <h2 id="backup-heading">Lernstand mitnehmen</h2>
+            <p>Dein StudyOS-Konto bleibt als Sicherungsdatei bei dir. Lade sie auf einem Laptop herunter und importiere sie auf dem anderen.</p>
+          </div>
+        </div>
+        <div class="backup-actions">
+          <button class="backup-button backup-primary" id="backup-export" type="button"><span aria-hidden="true">↓</span> Sicherung herunterladen</button>
+          <button class="backup-button" id="backup-import" type="button"><span aria-hidden="true">↑</span> Sicherung importieren</button>
+          <input id="backup-file" type="file" accept=".json,application/json" hidden aria-label="StudyOS-Sicherungsdatei auswählen">
+        </div>
+        <p class="backup-status" id="backup-status" role="status" aria-live="polite">Die Sicherung enthält Aufgaben, Notizen, Lernserie, Fokus-Sessions und Timerstand.</p>
+        <p class="backup-warning">Der Import ersetzt die Daten auf diesem Gerät. Die JSON-Datei ist nicht verschlüsselt – bewahre sie sicher auf und teile sie nur mit Personen, denen du vertraust.</p>
       </section>
 
       <footer class="app-footer"><span>StudyOS <span class="footer-dot">•</span> dein Lern-Cockpit</span><span>OFFLINE READY <span class="tiny-dot"></span></span></footer>

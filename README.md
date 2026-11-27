@@ -6,6 +6,12 @@ StudyOS ist ein leichtes, deutschsprachiges Lern-Cockpit für Laptop und Browser
 
 Aufgaben, Notizen, Timerzustand und Lernserie werden mit `localStorage` in diesem Browser gespeichert. Der App-Shell wird nach dem ersten erfolgreichen Laden zusätzlich per Service Worker gecacht. Die Online-Lernsuche fragt die deutschsprachige Wikipedia-API ab und zeigt kurze Zusammenfassungen mit direkten Quellenlinks. Die Suche benötigt eine Internetverbindung; die lokalen Bereiche sollen auch offline nutzbar bleiben.
 
+## Konto ohne E-Mail oder Passwort
+
+StudyOS benötigt kein Online-Konto und sammelt keine Login-Daten. Öffne in der App den Bereich **Daten**, wähle **Sicherung herunterladen** und übertrage die erzeugte JSON-Datei auf den anderen Laptop. Dort wählst du **Sicherung importieren** und öffnest die Datei. Aufgaben, Notizen, Lernserie, Fokus-Sessions und Timerstand werden auf dem neuen Gerät wiederhergestellt.
+
+Der Import ersetzt die auf dem Zielgerät gespeicherten StudyOS-Daten und fragt vorher nach einer Bestätigung. Die Sicherungsdatei ist nicht verschlüsselt; bewahre sie sicher auf und teile sie nur mit Personen, denen du vertraust. Es gibt keine automatische Cloud-Synchronisierung: Du entscheidest selbst, wann und wohin du die Datei kopierst.
+
 ## Als App installieren
 
 StudyOS lässt sich nach der öffentlichen Veröffentlichung in Microsoft Edge oder Google Chrome als App installieren. Öffne die StudyOS-Webseite und wähle im Browsermenü **Apps → StudyOS installieren** beziehungsweise **Installieren** (die Bezeichnung kann je nach Browserversion leicht abweichen). In Edge findest du den Befehl meist im Menü **Apps**; in Chrome erscheint er im Menü oder als Installationssymbol in der Adressleiste.

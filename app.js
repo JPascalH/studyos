@@ -43,7 +43,8 @@
     taskListDate: $('#task-list-date'), taskFooter: $('#task-footer-copy'), notes: $('#notes-input'),
     notesStatus: $('#notes-save-status'), notesCount: $('#notes-count'), searchForm: $('#search-form'),
     searchQuery: $('#search-query'), searchButton: $('#search-button'), searchStatus: $('#search-status'),
-    searchResults: $('#search-results'), toast: $('#toast')
+    searchResults: $('#search-results'), toast: $('#toast'), backupExport: $('#backup-export'),
+    backupImport: $('#backup-import'), backupFile: $('#backup-file'), backupStatus: $('#backup-status')
   };
 
   let toastTimer = null;
@@ -425,6 +426,123 @@
     }
   }
 
+  function isPlainObject(value) {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+    const prototype = Object.getPrototypeOf(value);
+    return prototype === Object.prototype || prototype === null;
+  }
+
+  function isValidDateKey(value) {
+    if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+    const [year, month, day] = value.split('-').map(Number);
+    const date = new Date(Date.UTC(year, month - 1, day));
+    return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
+  }
+
+  function normalizeBackupState(source) {
+    if (!isPlainObject(source) || !Array.isArray(source.tasks) || source.tasks.length > 1000 || typeof source.notes !== 'string' || source.notes.length > 1200) {
+      throw new Error('Die Sicherung ist unvollständig oder enthält ungültige Daten.');
+    }
+
+    const usedIds = new Set();
+    const tasks = source.tasks.map((task, index) => {
+      if (!isPlainObject(task) || typeof task.title !== 'string' || !task.title.trim() || task.title.length > 90 || typeof task.completed !== 'boolean') {
+        throw new Error('Eine Aufgabe in der Sicherung ist ungültig.');
+      }
+      const due = typeof task.due === 'string' ? task.due : '';
+      if (due && !isValidDateKey(due)) throw new Error('Ein Aufgabendatum in der Sicherung ist ungültig.');
+      const completedAt = task.completedAt == null ? null : task.completedAt;
+      if (completedAt !== null && !isValidDateKey(completedAt)) throw new Error('Ein Abschlussdatum in der Sicherung ist ungültig.');
+      let id = typeof task.id === 'string' && task.id.length > 0 && task.id.length <= 100 ? task.id : '';
+      if (!id || usedIds.has(id)) id = `import-${Date.now()}-${index}`;
+      usedIds.add(id);
+      const subject = typeof task.subject === 'string' && task.subject.length <= 40 ? task.subject : 'Allgemein';
+      const createdAt = Number.isFinite(task.createdAt) && task.createdAt >= 0 ? task.createdAt : Date.now();
+      return { id, title: task.title.trim(), subject, due, completed: task.completed, completedAt, createdAt };
+    });
+
+    if (source.activityDays !== undefined && !isPlainObject(source.activityDays)) throw new Error('Der Lernfortschritt in der Sicherung ist ungültig.');
+    const activityEntries = Object.entries(source.activityDays || {});
+    if (activityEntries.length > 3650) throw new Error('Die Sicherung enthält zu viele Fortschrittseinträge.');
+    const activityDays = {};
+    activityEntries.forEach(([date, count]) => {
+      if (!isValidDateKey(date) || !Number.isFinite(count) || count < 0 || count > 1000000) {
+        throw new Error('Ein Fortschrittseintrag in der Sicherung ist ungültig.');
+      }
+      if (count > 0) activityDays[date] = count;
+    });
+
+    const focusSessions = Number.isSafeInteger(source.focusSessions) && source.focusSessions >= 0 ? source.focusSessions : 0;
+    const timerSource = isPlainObject(source.timer) ? source.timer : {};
+    const mode = timerSource.mode === 'break' ? 'break' : 'focus';
+    const duration = mode === 'focus' ? FOCUS_SECONDS : BREAK_SECONDS;
+    let remaining = Number(timerSource.remaining);
+    if (timerSource.running && Number.isFinite(timerSource.endsAt)) remaining = Math.ceil((timerSource.endsAt - Date.now()) / 1000);
+    if (!Number.isFinite(remaining)) remaining = duration;
+    remaining = Math.max(0, Math.min(duration, Math.floor(remaining)));
+
+    return {
+      tasks,
+      notes: source.notes,
+      activityDays,
+      focusSessions,
+      timer: { mode, remaining, running: false, endsAt: null }
+    };
+  }
+
+  function downloadBackup() {
+    try {
+      const snapshot = JSON.parse(JSON.stringify(state));
+      snapshot.timer = { ...snapshot.timer, remaining: remainingSeconds(), running: false, endsAt: null };
+      const backup = {
+        app: 'StudyOS',
+        format: 'studyos-backup',
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        state: snapshot
+      };
+      const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `studyos-sicherung-${dateKey()}.json`;
+      document.body.append(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+      refs.backupStatus.textContent = 'Sicherung heruntergeladen. Übertrage die Datei auf deinen anderen Laptop.';
+    } catch (_) {
+      refs.backupStatus.textContent = 'Die Sicherung konnte nicht erstellt werden. Prüfe den verfügbaren Speicherplatz.';
+    }
+  }
+
+  async function importBackup(file) {
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      refs.backupStatus.textContent = 'Die Sicherungsdatei ist zu groß. Erlaubt sind höchstens 2 MB.';
+      return;
+    }
+    try {
+      const payload = JSON.parse(await file.text());
+      if (!isPlainObject(payload) || payload.app !== 'StudyOS' || payload.format !== 'studyos-backup' || payload.version !== 1) {
+        throw new Error('Diese Datei ist keine unterstützte StudyOS-Sicherung.');
+      }
+      const restored = normalizeBackupState(payload.state);
+      const confirmed = window.confirm('Die Sicherung ersetzt Aufgaben, Notizen und Fortschritt, die derzeit in diesem Browser gespeichert sind. Möchtest du fortfahren?');
+      if (!confirmed) {
+        refs.backupStatus.textContent = 'Import abgebrochen. Deine bisherigen Daten sind unverändert.';
+        return;
+      }
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(restored));
+      refs.backupStatus.textContent = 'Import erfolgreich. StudyOS wird mit deinem übertragenen Lernstand neu geladen …';
+      window.setTimeout(() => window.location.reload(), 500);
+    } catch (error) {
+      refs.backupStatus.textContent = error instanceof SyntaxError
+        ? 'Die Datei ist beschädigt oder kein gültiges StudyOS-Backup.'
+        : error.message || 'Die Sicherung konnte nicht importiert werden.';
+    }
+  }
+
   function wireNavigation() {
     document.querySelectorAll('.nav-link').forEach((link) => {
       link.addEventListener('click', () => {
@@ -453,6 +571,13 @@
     event.preventDefault();
     const query = refs.searchQuery.value.trim();
     if (query) searchWikipedia(query);
+  });
+  refs.backupExport.addEventListener('click', downloadBackup);
+  refs.backupImport.addEventListener('click', () => refs.backupFile.click());
+  refs.backupFile.addEventListener('change', () => {
+    const file = refs.backupFile.files && refs.backupFile.files[0];
+    importBackup(file);
+    refs.backupFile.value = '';
   });
   window.addEventListener('online', updateConnection);
   window.addEventListener('offline', updateConnection);
