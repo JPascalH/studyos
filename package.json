@@ -1,0 +1,57 @@
+{
+  "name": "studyos",
+  "version": "1.0.0",
+  "description": "StudyOS – dein zweisprachiges Lern-Cockpit",
+  "author": "StudyOS",
+  "engines": {
+    "node": ">=22"
+  },
+  "main": "desktop/main.cjs",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "build:win": "electron-builder --win portable --x64"
+  },
+  "devDependencies": {
+    "electron": "45.5.0",
+    "electron-builder": "26.18.0"
+  },
+  "overrides": {
+    "minimatch@^9.0.0": "11.0.1",
+    "minimatch@^10.0.0": "11.0.1"
+  },
+  "build": {
+    "appId": "com.studyos.desktop",
+    "productName": "StudyOS",
+    "asar": true,
+    "directories": {
+      "output": "release-build"
+    },
+    "files": [
+      "desktop/main.cjs",
+      "desktop/preload.cjs",
+      "index.html",
+      "styles.css",
+      "app.js",
+      "i18n.js",
+      "sw.js",
+      "manifest.webmanifest",
+      "studyos-mark.svg",
+      "studyos-icon-192.png",
+      "studyos-icon-512.png",
+      "studyos.ico"
+    ],
+    "win": {
+      "icon": "studyos.ico",
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "StudyOS-Portable-${version}.${ext}"
+    }
+  }
+}

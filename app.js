@@ -33,6 +33,7 @@
   }
 
   const state = loadState();
+  const desktopBridge = window.StudyOSDesktop || null;
   const $ = (selector) => document.querySelector(selector);
   const { t, applyLanguage, subjects } = window.StudyOSI18n;
   const refs = {
@@ -59,6 +60,7 @@
   let deferredInstallPrompt = null;
   let serviceWorkerRegistration = null;
   let applyingUpdate = false;
+  let desktopUpdateAvailable = false;
 
   function subjectLabel(subject) {
     return state.language === 'en' ? (subjects[subject] || subject) : subject;
@@ -73,10 +75,15 @@
     refs.avatarInitial.textContent = firstLetter ? firstLetter.toLocaleUpperCase(state.language === 'en' ? 'en-GB' : 'de-DE') : 'S';
   }
 
+  function savedTasksCopy() {
+    if (!desktopBridge) return t('tasks.savedBrowser');
+    return state.language === 'en' ? 'Your tasks are saved on this device.' : 'Deine Aufgaben werden nur auf diesem Gerät gespeichert.';
+  }
+
   function saveState() {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-      refs.taskFooter.textContent = t('tasks.savedBrowser');
+      refs.taskFooter.textContent = savedTasksCopy();
       return true;
     } catch (_) {
       refs.taskFooter.textContent = t('storage.unavailable');
@@ -443,7 +450,7 @@
   }
 
   function registerServiceWorker() {
-    if ('serviceWorker' in navigator) {
+    if (!desktopBridge && 'serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js').then((registration) => {
         serviceWorkerRegistration = registration;
         const showUpdate = () => { refs.updateButton.hidden = false; };
@@ -630,7 +637,8 @@
   refs.profileName.value = state.name;
   refs.profileLanguage.value = state.language;
   applyLanguage(state.language);
-  refs.installButton.hidden = Boolean(window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+  refs.installButton.hidden = Boolean(desktopBridge || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches));
+  refs.taskFooter.textContent = savedTasksCopy();
   refs.profileName.addEventListener('input', () => {
     state.name = refs.profileName.value.trim().slice(0, 40);
     saveState();
@@ -646,6 +654,7 @@
     renderTimer();
     renderTasks();
     refs.notesStatus.textContent = t('notes.saved');
+    refs.taskFooter.textContent = savedTasksCopy();
     if (!refs.updateButton.hidden) refs.updateButton.lastElementChild.textContent = t('update.available');
   });
   window.addEventListener('beforeinstallprompt', (event) => {
@@ -669,6 +678,10 @@
     showToast(t('install.done'));
   });
   refs.updateButton.addEventListener('click', () => {
+    if (desktopUpdateAvailable && desktopBridge) {
+      void desktopBridge.openLatestRelease();
+      return;
+    }
     const waitingWorker = serviceWorkerRegistration && serviceWorkerRegistration.waiting;
     if (!waitingWorker) return;
     applyingUpdate = true;
@@ -689,5 +702,13 @@
   renderNotes();
   wireNavigation();
   registerServiceWorker();
+  if (desktopBridge) {
+    desktopBridge.onUpdateAvailable(() => {
+      desktopUpdateAvailable = true;
+      refs.updateButton.hidden = false;
+      refs.updateButton.lastElementChild.textContent = t('update.available');
+    });
+    window.addEventListener('online', () => desktopBridge.checkForUpdates());
+  }
   window.setInterval(timerTick, 250);
 })();
